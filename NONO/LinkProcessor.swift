@@ -19,10 +19,20 @@ enum LinkProcessor {
             .sorted { lhs, rhs in
                 lhs.sortKey.localizedCaseInsensitiveCompare(rhs.sortKey) == .orderedAscending
             }
-            .map(\.url)
+        let sections = Dictionary(grouping: organizedLinks, by: \.sectionTitle)
+        let groupedLinks = sections
+            .keys
+            .sorted { lhs, rhs in
+                if lhs == "#" { return false }
+                if rhs == "#" { return true }
+                return lhs.localizedCaseInsensitiveCompare(rhs) == .orderedAscending
+            }
+            .flatMap { sectionTitle in
+                [sectionTitle] + (sections[sectionTitle] ?? []).map(\.url)
+            }
 
         let title = notesTitle(in: input)
-        let output = (title.map { [$0] } ?? []) + organizedLinks
+        let output = (title.map { [$0] } ?? []) + groupedLinks
         return output.joined(separator: "\n")
     }
 
@@ -63,8 +73,22 @@ enum LinkProcessor {
         }
 
         guard let cleanedURL = components.url?.absoluteString else { return nil }
-        let sortKey = profileIdentifier(host: host, path: components.path) ?? host.lowercased()
-        return Link(url: cleanedURL, sortKey: sortKey)
+        let identifier = profileIdentifier(host: host, path: components.path) ?? host.lowercased()
+        let sortKey = normalizedSortKey(for: identifier)
+        return Link(url: cleanedURL, sortKey: sortKey, sectionTitle: sectionTitle(for: sortKey))
+    }
+
+    nonisolated private static func normalizedSortKey(for identifier: String) -> String {
+        let withoutUnderscores = identifier.replacingOccurrences(of: "_", with: "")
+        let key = withoutUnderscores.isEmpty ? identifier : withoutUnderscores
+        return key.applyingTransform(.toLatin, reverse: false) ?? key
+    }
+
+    nonisolated private static func sectionTitle(for sortKey: String) -> String {
+        guard let first = sortKey.first else { return "#" }
+        if first.isNumber { return "#" }
+        guard let firstLetter = sortKey.first(where: \.isLetter) else { return "#" }
+        return String(firstLetter).uppercased()
     }
 
     nonisolated private static func profileIdentifier(host: String, path: String) -> String? {
@@ -93,5 +117,6 @@ enum LinkProcessor {
     private struct Link {
         let url: String
         let sortKey: String
+        let sectionTitle: String
     }
 }
