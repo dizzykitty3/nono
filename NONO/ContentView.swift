@@ -17,14 +17,21 @@ struct ContentView: View {
     @State private var didCopy = false
     @State private var showsCopyConfirmation = false
     @State private var copyFeedbackID = UUID()
+    @State private var showsAbout = false
 
     var body: some View {
         ZStack {
             VStack(alignment: .leading, spacing: 20) {
-                Text("NONO")
-                    .font(.largeTitle.weight(.bold))
-                    .tracking(0.5)
-                    .accessibilityAddTraits(.isHeader)
+                HStack(alignment: .center) {
+                    Text("NONO")
+                        .font(.largeTitle.weight(.bold))
+                        .tracking(0.5)
+                        .accessibilityAddTraits(.isHeader)
+
+                    Spacer()
+
+                    aboutButton
+                }
 
                 NotesTextView(text: $text)
                     .padding(12)
@@ -76,6 +83,34 @@ struct ContentView: View {
                     .transition(.opacity.combined(with: .scale(scale: 0.95)))
             }
         }
+        .sheet(isPresented: $showsAbout) {
+            NavigationStack {
+                Form {
+                    LabeledContent("Version", value: appVersion)
+
+                    Button("Open App Settings") {
+                        openAppSettings()
+                    }
+                }
+                .navigationTitle("About")
+            }
+        }
+    }
+
+    private var aboutButton: some View {
+        Button {
+            showsAbout = true
+        } label: {
+            Image(systemName: "info.circle")
+                .font(.title3.weight(.semibold))
+                .frame(width: 44, height: 44)
+        }
+        .buttonStyle(.plain)
+        .foregroundStyle(.primary)
+        .background(Circle().fill(.clear))
+        .glassEffect(.regular.interactive(), in: .circle)
+        .accessibilityLabel("About")
+        .accessibilityHint("Opens app information")
     }
 
     private var actionButton: some View {
@@ -130,6 +165,13 @@ struct ContentView: View {
         }
     }
 
+    private var appVersion: String {
+        let shortVersion = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? ""
+        let buildVersion = Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? ""
+
+        return "\(shortVersion) (\(buildVersion))"
+    }
+
     private func performAction() {
         switch actionState {
         case .paste:
@@ -149,6 +191,11 @@ struct ContentView: View {
         actionState = .paste
         didCopy = false
         showsCopyConfirmation = false
+    }
+
+    private func openAppSettings() {
+        guard let settingsURL = URL(string: UIApplication.openSettingsURLString) else { return }
+        UIApplication.shared.open(settingsURL)
     }
 
     private func showCopyFeedback() {
