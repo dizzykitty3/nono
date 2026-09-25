@@ -78,7 +78,8 @@ struct ContentView: View {
                     .foregroundStyle(.primary)
                     .padding(.horizontal, 16)
                     .padding(.vertical, 12)
-                    .background(Color(uiColor: .systemGray5), in: Capsule())
+                    .background(Capsule().fill(.clear))
+                    .glassEffect(.regular, in: Capsule())
                     .allowsHitTesting(false)
                     .transition(.opacity.combined(with: .scale(scale: 0.95)))
             }
