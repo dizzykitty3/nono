@@ -65,10 +65,14 @@ struct ContentView: View {
                     }
 
                     Spacer()
-                    if didCopy {
-                        clearButton
+                    GlassEffectContainer(spacing: 8) {
+                        HStack(spacing: 8) {
+                            if didCopy {
+                                clearButton
+                            }
+                            actionButton
+                        }
                     }
-                    actionButton
                 }
                 .padding(.horizontal, 20)
                 .padding(.bottom, 8)
