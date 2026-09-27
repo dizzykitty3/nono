@@ -54,12 +54,14 @@ struct ContentView: View {
             .safeAreaInset(edge: .bottom) {
                 HStack(alignment: .center) {
                     VStack(alignment: .leading, spacing: 4) {
-                        Text(linkCount == 1 ? "\(linkCount) link" : "\(linkCount) links")
-                            .font(.subheadline.weight(.medium))
-                            .foregroundStyle(.primary)
                         Text(statusText)
-                            .font(.subheadline)
+                            .font(.system(.subheadline, design: .monospaced))
+                            .foregroundStyle(.primary)
+                        Text(linkCount == 1 ? "\(linkCount) link" : "\(linkCount) links")
+                            .font(.system(.subheadline, design: .monospaced))
                             .foregroundStyle(.secondary)
+                            .opacity(actionState == .copy ? 1 : 0)
+                            .accessibilityHidden(actionState != .copy)
                     }
 
                     Spacer()
