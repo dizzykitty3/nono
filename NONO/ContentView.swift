@@ -89,6 +89,10 @@ struct ContentView: View {
                 Form {
                     LabeledContent("Version", value: appVersion)
 
+                    Button("GitHub Repository") {
+                        openGitHubRepository()
+                    }
+
                     Button("Open App Settings") {
                         openAppSettings()
                     }
@@ -197,6 +201,11 @@ struct ContentView: View {
     private func openAppSettings() {
         guard let settingsURL = URL(string: UIApplication.openSettingsURLString) else { return }
         UIApplication.shared.open(settingsURL)
+    }
+
+    private func openGitHubRepository() {
+        guard let repositoryURL = URL(string: "https://github.com/dizzykitty3/nono/") else { return }
+        UIApplication.shared.open(repositoryURL)
     }
 
     private func showCopyFeedback() {
