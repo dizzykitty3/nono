@@ -10,6 +10,47 @@ import Testing
 
 struct NONOTests {
 
+    @Test func recognizesPixivProfilesWithLanguagePrefixes() {
+        let input = """
+        https://www.pixiv.net/en/users/94295754
+        https://pixiv.net/users/100
+        https://www.pixiv.net/zh/users/200
+        """
+        #expect(LinkProcessor.organize(input) == """
+        #
+        https://pixiv.net/users/100
+        https://www.pixiv.net/zh/users/200
+        https://www.pixiv.net/en/users/94295754
+        """)
+    }
+
+    @Test func recognizesHanimeSearchValue() {
+        #expect(LinkProcessor.organize("https://hanime1.me/search?query=123") == "#\nhttps://hanime1.me/search?query=123")
+    }
+
+    @Test func infersUnknownSiteQueryIdentifiers() {
+        for query in ["uid=alice", "user_id=alice&page=2", "username=alice", "q=alice", "creator=alice", "page=2&creator=alice"] {
+            let url = "https://example.com/search?\(query)"
+            #expect(LinkProcessor.organize(url) == "A\n\(url)")
+        }
+        let url = "https://example.com/?page=2&uid=alice&id=zebra"
+        #expect(LinkProcessor.organize(url) == "A\n\(url)")
+    }
+
+    @Test func avoidsIncidentalAndAmbiguousParameters() {
+        for query in ["page=2", "uid=&page=2", "creator=alice&category=zebra", "utm_source=alice&page=2"] {
+            let result = LinkProcessor.organize("https://example.com/search?\(query)")
+            #expect(result.hasPrefix("S\n"))
+        }
+        #expect(LinkProcessor.organize("https://x.com/bob?ref=alice").hasPrefix("B\n"))
+    }
+
+    @Test func decodesQueryValuesOnceAndPreservesURL() {
+        let url = "https://example.com/profile?username=%61lice%26bob%3D1&page=2"
+        #expect(LinkProcessor.organize(url) == "A\nhttps://example.com/profile?username=alice%26bob%3D1&page=2")
+        #expect(LinkProcessor.linkCount(in: "\(url)&utm_source=share\n\(url)") == 1)
+    }
+
     @Test func cleansTrackingParametersAndSortsByUsername() async throws {
         let input = """
         https://x.com/ashkillash?s=21
@@ -78,10 +119,23 @@ struct NONOTests {
         https://x.com/aa
         https://x.com/a_b
         Z
-        https://weibo.com/n/%E4%B8%AD%E6%96%87
+        https://weibo.com/n/中文
         #
         https://x.com/9lives
         """)
+    }
+
+    @Test func displaysUTF8WithoutChangingURLSeparators() {
+        let encoded = "https://example.com/search?query=%E4%B8%AD%E6%96%87%26%3D%23%2F%20%25&name=%E6%B5%8B%E8%AF%95"
+        let readable = "https://example.com/search?query=中文%26%3D%23/%20%25&name=测试"
+        #expect(LinkProcessor.organize(encoded) == "Z\n\(readable)")
+        #expect(LinkProcessor.linkCount(in: "\(encoded)\n\(readable)") == 1)
+        #expect(LinkProcessor.organize(readable) == "Z\n\(readable)")
+    }
+
+    @Test func preservesEscapedUnicodeWhitespaceAndLiteralPercentEncoding() {
+        let url = "https://example.com/中文%C2%A0名字%25E4%25B8%25AD"
+        #expect(LinkProcessor.organize(url) == "Z\n\(url)")
     }
 
 }

@@ -60,7 +60,10 @@ enum LinkProcessor {
     }
 
     nonisolated private static func clean(_ rawURL: String) -> Link? {
-        guard var components = URLComponents(string: rawURL),
+        // Encode Unicode before parsing so existing percent escapes are not encoded twice.
+        let asciiURLCharacters = CharacterSet(charactersIn: "\u{21}"..."\u{7E}")
+        guard let encodedURL = rawURL.addingPercentEncoding(withAllowedCharacters: asciiURLCharacters),
+              var components = URLComponents(string: encodedURL),
               let host = components.host else { return nil }
 
         components.fragment = nil
@@ -73,15 +76,67 @@ enum LinkProcessor {
         }
 
         guard let cleanedURL = components.url?.absoluteString else { return nil }
-        let identifier = profileIdentifier(host: host, path: components.path) ?? host.lowercased()
+        let identifier = queryIdentifier(host: host, path: components.path, items: components.queryItems ?? [])
+            ?? profileIdentifier(host: host, path: components.path)
+            ?? host.lowercased()
         let sortKey = normalizedSortKey(for: identifier)
-        return Link(url: cleanedURL, sortKey: sortKey, sectionTitle: sectionTitle(for: sortKey))
+        return Link(url: readableURL(cleanedURL), sortKey: sortKey, sectionTitle: sectionTitle(for: sortKey))
+    }
+
+    nonisolated private static func readableURL(_ url: String) -> String {
+        // Decode only UTF-8 non-ASCII bytes; escaped URL delimiters must stay escaped.
+        guard let expression = try? NSRegularExpression(pattern: #"(?i)(?:%[CD][0-9A-F]%[89AB][0-9A-F]|%E[0-9A-F](?:%[89AB][0-9A-F]){2}|%F[0-4](?:%[89AB][0-9A-F]){3})"#) else {
+            return url
+        }
+        var result = url
+        let matches = expression.matches(in: url, range: NSRange(url.startIndex..., in: url))
+        for match in matches.reversed() {
+            guard let range = Range(match.range, in: result),
+                  let decoded = String(result[range]).removingPercentEncoding,
+                  decoded.rangeOfCharacter(from: .whitespacesAndNewlines.union(.controlCharacters)) == nil else {
+                continue
+            }
+            result.replaceSubrange(range, with: decoded)
+        }
+        return result
     }
 
     nonisolated private static func normalizedSortKey(for identifier: String) -> String {
         let withoutUnderscores = identifier.replacingOccurrences(of: "_", with: "")
         let key = withoutUnderscores.isEmpty ? identifier : withoutUnderscores
         return key.applyingTransform(.toLatin, reverse: false) ?? key
+    }
+
+    nonisolated private static func queryIdentifier(host: String, path: String, items: [URLQueryItem]) -> String? {
+        // URLComponents handles separators and percent decoding without splitting encoded values.
+        let candidates = items.compactMap { item -> (key: String, value: String)? in
+            guard let value = item.value?.trimmingCharacters(in: .whitespacesAndNewlines),
+                  !value.isEmpty else { return nil }
+            return (item.name.lowercased(), value)
+        }
+        let normalizedHost = host.lowercased().hasPrefix("www.")
+            ? String(host.lowercased().dropFirst(4)) : host.lowercased()
+        if normalizedHost == "hanime1.me", path == "/search" || path == "/search/",
+           let value = candidates.first(where: { $0.key == "query" })?.value {
+            return value
+        }
+
+        for key in ["user_id", "userid", "uid", "username", "user", "member_id", "memberid", "profile_id", "profileid", "account", "id"] {
+            if let value = candidates.first(where: { $0.key == key })?.value { return value }
+        }
+
+        // Keep existing profile paths authoritative when only incidental parameters remain.
+        let segments = path.split(separator: "/")
+        let genericPaths: Set<String> = ["search", "user", "users", "profile", "member", "account", "index", "index.php", "user.php", "profile.php", "member.php", "search.php"]
+        guard segments.isEmpty || (segments.count == 1 && genericPaths.contains(String(segments[0]).lowercased())) else {
+            return nil
+        }
+        for key in ["query", "q", "keyword", "keywords", "search"] {
+            if let value = candidates.first(where: { $0.key == key })?.value { return value }
+        }
+        let incidentalKeys: Set<String> = ["page", "p", "limit", "offset", "sort", "order", "lang", "locale", "ref", "source", "redirect", "redirect_uri", "return", "return_to", "token", "access_token", "session"]
+        let remaining = candidates.filter { !incidentalKeys.contains($0.key) }
+        return remaining.count == 1 ? remaining[0].value : nil
     }
 
     nonisolated private static func sectionTitle(for sortKey: String) -> String {
@@ -103,7 +158,14 @@ enum LinkProcessor {
         case "nhentai.net":
             identifier = first == "artist" ? segments.dropFirst().first : first
         case "pixiv.net":
-            identifier = first == "users" ? segments.dropFirst().first : first
+            if first == "users" {
+                identifier = segments.dropFirst().first
+            } else if segments.count >= 3, segments[1] == "users" {
+                // Pixiv profile links can include a language prefix, such as /en/users/123.
+                identifier = segments[2]
+            } else {
+                identifier = first
+            }
         case "weibo.com":
             identifier = (first == "n" || first == "u") ? segments.dropFirst().first : first
         default:
