@@ -18,6 +18,8 @@ struct NotesTextView: UIViewRepresentable {
         textView.textContainerInset = .zero
         textView.textContainer.lineFragmentPadding = 0
         textView.adjustsFontForContentSizeCategory = true
+        textView.font = UIFont.preferredFont(forTextStyle: .body)
+        textView.textColor = .label
         return textView
     }
 
@@ -36,9 +38,6 @@ struct NotesTextView: UIViewRepresentable {
         result.addAttribute(.font, value: UIFont.preferredFont(forTextStyle: .body), range: fullRange)
         result.addAttribute(.foregroundColor, value: UIColor.label, range: fullRange)
 
-        let firstLine = text.split(separator: "\n", omittingEmptySubsequences: false).first.map(String.init) ?? ""
-        guard !firstLine.isEmpty, LinkProcessor.linkCount(in: firstLine) == 0 else { return result }
-        result.addAttribute(.font, value: UIFont.preferredFont(forTextStyle: .title2), range: NSRange(firstLine.startIndex..., in: firstLine))
         return result
     }
 
