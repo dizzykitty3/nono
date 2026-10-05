@@ -12,6 +12,7 @@ import UniformTypeIdentifiers
 struct ContentView: View {
     private enum ActionState { case paste, copy }
 
+    @AppStorage("organizationCount") private var organizationCount = 0
     @State private var text = ""
     @State private var actionState: ActionState = .paste
     @State private var didCopy = false
@@ -93,6 +94,7 @@ struct ContentView: View {
         .sheet(isPresented: $showsAbout) {
             NavigationStack {
                 Form {
+                    LabeledContent("Times Organized", value: organizationCount.formatted())
                     LabeledContent("Version", value: appVersion)
 
                     Button("GitHub Repository") {
@@ -188,6 +190,9 @@ struct ContentView: View {
         case .paste:
             guard let pastedText = UIPasteboard.general.string, !pastedText.isEmpty else { return }
             text = LinkProcessor.organize(pastedText)
+            if LinkProcessor.linkCount(in: text) > 0 {
+                organizationCount += 1
+            }
             actionState = .copy
             didCopy = false
         case .copy:
