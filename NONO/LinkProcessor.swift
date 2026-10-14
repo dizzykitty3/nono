@@ -116,6 +116,10 @@ enum LinkProcessor {
         }
         let normalizedHost = host.lowercased().hasPrefix("www.")
             ? String(host.lowercased().dropFirst(4)) : host.lowercased()
+        if normalizedHost == "18comic.vip", path == "/search/photos" || path == "/search/photos/",
+           let value = candidates.first(where: { $0.key == "search_query" })?.value {
+            return value
+        }
         if normalizedHost == "hanime1.me", path == "/search" || path == "/search/",
            let value = candidates.first(where: { $0.key == "query" })?.value {
             return value
@@ -155,6 +159,8 @@ enum LinkProcessor {
 
         let identifier: String?
         switch normalizedHost {
+        case "my.erohere.eu":
+            identifier = first == "search" ? segments.dropFirst().first ?? first : first
         case "nhentai.net":
             identifier = first == "artist" ? segments.dropFirst().first : first
         case "pixiv.net":

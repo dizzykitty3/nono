@@ -28,6 +28,28 @@ struct NONOTests {
         #expect(LinkProcessor.organize("https://hanime1.me/search?query=123") == "#\nhttps://hanime1.me/search?query=123")
     }
 
+    @Test func recognizes18ComicSearchUsername() {
+        for host in ["18comic.vip", "www.18comic.vip"] {
+            for path in ["/search/photos", "/search/photos/"] {
+                let url = "https://\(host)\(path)?search_query=Kawagawa&page=2"
+                #expect(LinkProcessor.organize(url) == "K\n\(url)")
+            }
+        }
+        let url = "https://18comic.vip/search/photos?search_query=Kawagawa"
+        #expect(LinkProcessor.organize(url) == "K\n\(url)")
+        #expect(LinkProcessor.organize("https://18comic.vip/search/photos?search_query=").hasPrefix("S\n"))
+    }
+
+    @Test func recognizesErohereSearchPath() {
+        for term in ["萝莉病", "%E8%90%9D%E8%8E%89%E7%97%85"] {
+            let url = "https://my.erohere.eu/search/\(term)"
+            #expect(LinkProcessor.organize(url) == "L\nhttps://my.erohere.eu/search/萝莉病")
+        }
+        let url = "https://my.erohere.eu/search/Alice/?page=2"
+        #expect(LinkProcessor.organize(url) == "A\n\(url)")
+        #expect(LinkProcessor.organize("https://my.erohere.eu/search/") == "S\nhttps://my.erohere.eu/search/")
+    }
+
     @Test func infersUnknownSiteQueryIdentifiers() {
         for query in ["uid=alice", "user_id=alice&page=2", "username=alice", "q=alice", "creator=alice", "page=2&creator=alice"] {
             let url = "https://example.com/search?\(query)"
