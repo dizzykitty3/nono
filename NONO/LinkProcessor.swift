@@ -1,8 +1,3 @@
-//
-//  LinkProcessor.swift
-//  NONO
-//
-
 import Foundation
 
 enum LinkProcessor {

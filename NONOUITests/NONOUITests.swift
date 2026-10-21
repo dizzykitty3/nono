@@ -1,10 +1,3 @@
-//
-//  NONOUITests.swift
-//  NONOUITests
-//
-//  Created by Theo on 9/17/26.
-//
-
 import XCTest
 
 final class NONOUITests: XCTestCase {

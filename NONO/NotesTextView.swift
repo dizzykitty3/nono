@@ -1,8 +1,3 @@
-//
-//  NotesTextView.swift
-//  NONO
-//
-
 import SwiftUI
 import UIKit
 
