@@ -8,6 +8,7 @@ struct NotesTextView: UIViewRepresentable {
         let textView = UITextView()
         textView.backgroundColor = .clear
         textView.delegate = context.coordinator
+        textView.isEditable = false
         textView.isScrollEnabled = true
         textView.alwaysBounceVertical = true
         textView.textContainerInset = .zero
