@@ -3,6 +3,42 @@ import Testing
 
 struct NONOTests {
 
+    @Test func recognizesIwaraVideoProfilesWithoutSchemes() {
+        let input = """
+        www.iwara.tv/profile/fddjjk/videos
+        www.iwara.tv/profile/chouketu/videos
+        www.iwara.tv/profile/qinzhen78/videos
+        www.iwara.tv/profile/sayumi7/videos
+        www.iwara.tv/profile/namijisu123/videos
+        www.iwara.tv/profile/fearess/videos
+        """
+        #expect(LinkProcessor.organize(input) == """
+        C
+        https://www.iwara.tv/profile/chouketu/videos
+        F
+        https://www.iwara.tv/profile/fddjjk/videos
+        https://www.iwara.tv/profile/fearess/videos
+        N
+        https://www.iwara.tv/profile/namijisu123/videos
+        Q
+        https://www.iwara.tv/profile/qinzhen78/videos
+        S
+        https://www.iwara.tv/profile/sayumi7/videos
+        """)
+        #expect(LinkProcessor.linkCount(in: input) == 6)
+    }
+
+    @Test func cleansAndDeduplicatesIwaraProfiles() {
+        for host in ["iwara.tv", "www.iwara.tv"] {
+            let url = "https://\(host)/profile/alice/videos/"
+            let input = "Creators\n[alice](\(host)/profile/alice/videos/?utm_source=share#top)\n\(url)"
+            #expect(LinkProcessor.organize(input) == "Creators\nA\n\(url)")
+            #expect(LinkProcessor.linkCount(in: input) == 1)
+            #expect(LinkProcessor.organize("http://\(host)/profile/bob/videos") == "B\nhttp://\(host)/profile/bob/videos")
+        }
+        #expect(LinkProcessor.linkCount(in: "fakeiwara.tv/profile/alice/videos user@iwara.tv/profile/alice/videos") == 0)
+    }
+
     @Test func recognizesPixivProfilesWithLanguagePrefixes() {
         let input = """
         https://www.pixiv.net/en/users/94295754

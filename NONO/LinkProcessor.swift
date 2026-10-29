@@ -38,7 +38,7 @@ enum LinkProcessor {
 
     nonisolated private static func extractLinks(from input: String) -> [String] {
         // This also picks up URLs inside Notes-style Markdown links.
-        let pattern = #"https?://[^\s<>\]\)]+"#
+        let pattern = #"(?i)https?://[^\s<>\]\)]+|(?<![\w/@.:-])(?:www\.)?iwara\.tv/profile/[^\s<>\]\)]+"#
         guard let expression = try? NSRegularExpression(pattern: pattern) else { return [] }
         let range = NSRange(input.startIndex..., in: input)
         return expression.matches(in: input, range: range).compactMap {
@@ -55,6 +55,7 @@ enum LinkProcessor {
     }
 
     nonisolated private static func clean(_ rawURL: String) -> Link? {
+        let rawURL = rawURL.contains("://") ? rawURL : "https://" + rawURL
         // Encode Unicode before parsing so existing percent escapes are not encoded twice.
         let asciiURLCharacters = CharacterSet(charactersIn: "\u{21}"..."\u{7E}")
         guard let encodedURL = rawURL.addingPercentEncoding(withAllowedCharacters: asciiURLCharacters),
@@ -154,6 +155,8 @@ enum LinkProcessor {
 
         let identifier: String?
         switch normalizedHost {
+        case "iwara.tv":
+            identifier = first == "profile" ? segments.dropFirst().first : first
         case "my.erohere.eu":
             identifier = first == "search" ? segments.dropFirst().first ?? first : first
         case "nhentai.net":
