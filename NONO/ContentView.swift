@@ -51,10 +51,15 @@ struct ContentView: View {
                         Text(statusText)
                             .font(.system(.subheadline, design: .monospaced))
                             .foregroundStyle(.primary)
+                            .contentTransition(.opacity)
+                            .animation(.easeInOut(duration: 0.2), value: statusText)
                         Text(linkCount == 1 ? "\(linkCount) link" : "\(linkCount) links")
                             .font(.system(.subheadline, design: .monospaced))
                             .foregroundStyle(.secondary)
+                            .contentTransition(.opacity)
                             .opacity(actionState == .copy ? 1 : 0)
+                            .animation(.easeInOut(duration: 0.2), value: linkCount)
+                            .animation(.easeInOut(duration: 0.2), value: actionState)
                             .accessibilityHidden(actionState != .copy)
                     }
 
