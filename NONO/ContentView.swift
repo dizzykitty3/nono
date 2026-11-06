@@ -12,6 +12,7 @@ struct ContentView: View {
     @State private var showsCopyConfirmation = false
     @State private var copyFeedbackID = UUID()
     @State private var showsAbout = false
+    @State private var emptyClipboardFeedbackID: UUID?
 
     var body: some View {
         ZStack {
@@ -88,6 +89,16 @@ struct ContentView: View {
                     .allowsHitTesting(false)
                     .transition(.opacity.combined(with: .scale(scale: 0.95)))
             }
+        }
+        .task(id: emptyClipboardFeedbackID) {
+            guard let feedbackID = emptyClipboardFeedbackID else { return }
+            do {
+                try await Task.sleep(for: .seconds(2))
+            } catch {
+                return
+            }
+            guard emptyClipboardFeedbackID == feedbackID else { return }
+            emptyClipboardFeedbackID = nil
         }
         .sheet(isPresented: $showsAbout) {
             NavigationStack {
@@ -171,7 +182,7 @@ struct ContentView: View {
 
     private var statusText: String {
         switch actionState {
-        case .paste: "Ready to paste"
+        case .paste: emptyClipboardFeedbackID == nil ? "Ready to paste" : "Clipboard is empty"
         case .copy: didCopy ? "Copied" : "Organized"
         }
     }
@@ -186,7 +197,11 @@ struct ContentView: View {
     private func performAction() {
         switch actionState {
         case .paste:
-            guard let pastedText = UIPasteboard.general.string, !pastedText.isEmpty else { return }
+            guard let pastedText = UIPasteboard.general.string, !pastedText.isEmpty else {
+                emptyClipboardFeedbackID = UUID()
+                return
+            }
+            emptyClipboardFeedbackID = nil
             text = LinkProcessor.organize(pastedText)
             if LinkProcessor.linkCount(in: text) > 0 {
                 organizationCount += 1
@@ -201,6 +216,7 @@ struct ContentView: View {
     }
 
     private func clearText() {
+        emptyClipboardFeedbackID = nil
         text = ""
         actionState = .paste
         didCopy = false
