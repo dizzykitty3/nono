@@ -205,6 +205,7 @@ struct ContentView: View {
     private func performAction() {
         switch actionState {
         case .paste:
+            UIImpactFeedbackGenerator(style: .light).impactOccurred()
             guard let pastedText = UIPasteboard.general.string, !pastedText.isEmpty else {
                 emptyClipboardFeedbackID = UUID()
                 return
@@ -218,12 +219,14 @@ struct ContentView: View {
             didCopy = false
         case .copy:
             UIPasteboard.general.setItems([[UTType.utf8PlainText.identifier: text]])
+            UINotificationFeedbackGenerator().notificationOccurred(.success)
             didCopy = true
             showCopyFeedback()
         }
     }
 
     private func clearText() {
+        UIImpactFeedbackGenerator(style: .light).impactOccurred()
         emptyClipboardFeedbackID = nil
         text = ""
         actionState = .paste
