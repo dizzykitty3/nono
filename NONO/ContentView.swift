@@ -115,6 +115,14 @@ struct ContentView: View {
                     }
                 }
                 .navigationTitle("About")
+                .toolbar {
+                    ToolbarItem(placement: .topBarLeading) {
+                        Button("Close", systemImage: "xmark") {
+                            showsAbout = false
+                        }
+                        .labelStyle(.iconOnly)
+                    }
+                }
             }
         }
     }
