@@ -38,7 +38,7 @@ enum LinkProcessor {
 
     nonisolated private static func extractLinks(from input: String) -> [String] {
         // This also picks up URLs inside Notes-style Markdown links.
-        let pattern = #"(?i)https?://[^\s<>\]\)]+|(?<![\w/@.:-])(?:www\.)?iwara\.tv/profile/[^\s<>\]\)]+"#
+        let pattern = #"(?i)https?://[^\s<>\]\)]+|(?<![\w/@.:-])(?:(?:www\.)?iwara\.tv/profile/|my\.erohere\.(?:art|eu)/search/)[^\s<>\]\)]+"#
         guard let expression = try? NSRegularExpression(pattern: pattern) else { return [] }
         let range = NSRange(input.startIndex..., in: input)
         return expression.matches(in: input, range: range).compactMap {
@@ -157,7 +157,7 @@ enum LinkProcessor {
         switch normalizedHost {
         case "iwara.tv":
             identifier = first == "profile" ? segments.dropFirst().first : first
-        case "my.erohere.eu":
+        case "my.erohere.art", "my.erohere.eu":
             identifier = first == "search" ? segments.dropFirst().first ?? first : first
         case "nhentai.net":
             identifier = first == "artist" ? segments.dropFirst().first : first

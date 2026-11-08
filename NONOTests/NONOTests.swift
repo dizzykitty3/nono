@@ -70,6 +70,18 @@ struct NONOTests {
     }
 
     @Test func recognizesErohereSearchPath() {
+        let input = """
+        my.erohere.art/search/Walkure
+        my.erohere.art/search/kouun
+        https://my.erohere.art/search/Walkure
+        """
+        #expect(LinkProcessor.linkCount(in: input) == 2)
+        #expect(LinkProcessor.organize(input) == """
+        K
+        https://my.erohere.art/search/kouun
+        W
+        https://my.erohere.art/search/Walkure
+        """)
         for term in ["萝莉病", "%E8%90%9D%E8%8E%89%E7%97%85"] {
             let url = "https://my.erohere.eu/search/\(term)"
             #expect(LinkProcessor.organize(url) == "L\nhttps://my.erohere.eu/search/萝莉病")
